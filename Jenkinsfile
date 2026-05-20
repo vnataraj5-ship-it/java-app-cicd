@@ -83,9 +83,11 @@ stage('Deploy To EC2') {
 steps {
 
 sh '''
-ssh ubuntu@$DEPLOY_IP "
+ssh -o StrictHostKeyChecking=no ubuntu@$DEPLOY_IP "
 
-wget -O /tmp/$ARTIFACT_NAME \
+wget --user=admin \
+--password=admin123 \
+-O /tmp/$ARTIFACT_NAME \
 $NEXUS_URL/repository/maven-releases/com/example/java-app-cicd/1.0/$ARTIFACT_NAME
 
 sudo cp /tmp/$ARTIFACT_NAME /var/lib/tomcat10/webapps/
