@@ -88,13 +88,13 @@ steps {
 
 sh '''
 
-ssh ubuntu@$DEPLOY_IP "
+ssh ubuntu@13.127.8.29 "
 
 wget -O /tmp/java-app-cicd.war \
+http://13.206.222.52:8081/repository/maven-releases/com/example/java-app-cicd/1.0/java-app-cicd.war
 
-$NEXUS_URL/repository/maven-releases/com/example/java-app-cicd/1.0/java-app-cicd.war
+sudo cp /tmp/java-app-cicd.war /opt/tomcat/webapps/
 
-sudo cp /tmp/java-app-cicd.war /var/lib/tomcat10/webapps/
 
 "
 
