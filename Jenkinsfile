@@ -3,120 +3,117 @@ pipeline {
 agent any
 
 tools {
-
-maven 'maven'
-
+    maven 'maven'
 }
 
 environment {
 
-SONAR_URL = "http://13.206.222.52:9000"
+    SONAR_URL = "http://13.206.222.52:9000"
 
-NEXUS_URL = "http://13.206.222.52:8081"
+    NEXUS_URL = "http://13.206.222.52:8081"
 
-DEPLOY_IP = "13.127.8.29"
+    DEPLOY_IP = "13.127.8.29"
 
-ARTIFACT_NAME = "java-app-cicd-1.0.war"
+    ARTIFACT_NAME = "java-app-cicd-1.0.war"
 
 }
 
 stages {
 
-stage('Checkout') {
+    stage('Checkout') {
 
-steps {
+        steps {
 
-git branch: 'main',
+            git branch: 'main',
+            url: 'https://github.com/vnataraj5-ship-it/java-app-cicd.git'
 
-url: 'https://github.com/vnataraj5-ship-it/java-app-cicd.git'
+        }
 
-}
+    }
 
-}
+    stage('SonarQube Analysis') {
 
-stage('SonarQube Analysis') {
+        steps {
 
-steps {
+            withSonarQubeEnv('sonar-server') {
 
-withSonarQubeEnv('sonar-server') {
+                sh '''
+                mvn clean verify sonar:sonar \
+                -Dsonar.projectKey=java-app-cicd \
+                -Dsonar.host.url=$SONAR_URL
+                '''
 
-sh '''
-mvn clean verify sonar:sonar \
--Dsonar.projectKey=java-app-cicd \
--Dsonar.host.url=$SONAR_URL
-'''
+            }
 
-}
+        }
 
-}
+    }
 
-}
+    stage('Build') {
 
-stage('Build') {
+        steps {
 
-steps {
+            sh '''
+            mvn clean package
+            '''
 
-sh '''
-mvn clean package
-'''
+        }
 
-}
+    }
 
-}
+    stage('Push Artifact To Nexus') {
 
-stage('Push Artifact To Nexus') {
+        steps {
 
-steps {
+            sh '''
+            curl -v -u admin:Qwert@mnv1234 \
+            --upload-file target/$ARTIFACT_NAME \
+            $NEXUS_URL/repository/maven-releases/com/example/java-app-cicd/1.0/$ARTIFACT_NAME
+            '''
 
-sh '''
-curl -v -u admin:admin123 \
---upload-file target/$ARTIFACT_NAME \
-$NEXUS_URL/repository/maven-releases/com/example/java-app-cicd/1.0/$ARTIFACT_NAME
-'''
+        }
 
-}
+    }
 
-}
+    stage('Deploy To EC2') {
 
-stage('Deploy To EC2') {
+        steps {
 
-steps {
+            sh '''
+            ssh -o StrictHostKeyChecking=no ubuntu@$DEPLOY_IP "
 
-sh '''
-ssh -o StrictHostKeyChecking=no ubuntu@$DEPLOY_IP "
+            wget \
+            --user=admin \
+            --password='Qwert@mnv1234' \
+            -O /tmp/$ARTIFACT_NAME \
+            $NEXUS_URL/repository/maven-releases/com/example/java-app-cicd/1.0/$ARTIFACT_NAME
 
-wget --user=admin \
---password=admin123 \
--O /tmp/$ARTIFACT_NAME \
-$NEXUS_URL/repository/maven-releases/com/example/java-app-cicd/1.0/$ARTIFACT_NAME
+            sudo cp /tmp/$ARTIFACT_NAME /var/lib/tomcat10/webapps/
 
-sudo cp /tmp/$ARTIFACT_NAME /var/lib/tomcat10/webapps/
+            sudo systemctl restart tomcat10
 
-sudo systemctl restart tomcat10
+            "
+            '''
 
-"
+        }
 
-'''
-
-}
-
-}
+    }
 
 }
 
 post {
 
-success {
+    success {
 
-echo 'PIPELINE SUCCESS'
+        echo 'PIPELINE SUCCESS'
 
-}
+    }
 
-failure {
+    failure {
 
-echo 'PIPELINE FAILED'
+        echo 'PIPELINE FAILED'
 
-}
+    }
 
 }
 
