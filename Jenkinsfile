@@ -84,7 +84,7 @@ stages {
 
             wget \
             --user=admin \
-            --password='Qwert@mnv1234' \
+            --password='admin123' \
             -O /tmp/$ARTIFACT_NAME \
             $NEXUS_URL/repository/maven-releases/com/example/java-app-cicd/1.0/$ARTIFACT_NAME
 
